@@ -1,0 +1,7 @@
+ffmpeg-python==0.2.0
+pydub==0.25.1
+numpy==1.26.4
+tqdm==4.66.2
+tensorflow==2.16.1
+tensorflow-hub==0.16.1
+librosa==0.10.1
