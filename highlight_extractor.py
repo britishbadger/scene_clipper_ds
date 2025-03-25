@@ -12,6 +12,31 @@ import tensorflow_hub as hub
 import librosa
 import csv
 
+import numpy as np
+import librosa
+import matplotlib.pyplot as plt
+
+def visualize_events(video_path, event_times, output_dir):
+    """Visualizes the detected events on the audio waveform."""
+    y, sr = librosa.load(video_path, sr=None)  # Load with original sample rate
+    
+    plt.figure(figsize=(12, 4))
+    #librosa.display.waveshow(y, sr=sr)
+    
+    for start, end in event_times:
+        plt.axvspan(start, end, color='red', alpha=0.2)
+    
+    plt.xlabel("Time (s)")
+    plt.ylabel("Amplitude")
+    plt.title("Detected Events")
+    plt.tight_layout()
+    
+    output_path = os.path.join(output_dir, "events_visualization.png")
+    plt.savefig(output_path)
+    plt.close()
+    print(f"Saved event visualization to {output_path}")
+
+    
 def extract_audio(video_path):
     """Extract mono audio from video using ffmpeg"""
     audio = AudioSegment.from_file(video_path).set_channels(1).set_frame_rate(44100)
@@ -128,6 +153,9 @@ def main():
     
     print("Detecting events...")
     events = detect_events(event_times)
+    
+    # Visualize events
+    visualize_events(args.input, event_times, args.output_dir)
     
     print(f"Found {len(events)} events. Exporting clips...")
     for start, end in events:
