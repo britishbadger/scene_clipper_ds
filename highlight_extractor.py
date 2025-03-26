@@ -155,7 +155,7 @@ def main():
     events = detect_events(event_times)
     
     # Visualize events
-    visualize_events(args.input, event_times, args.output_dir)
+    visualize_events(args.input, events, args.output_dir)
     
     print(f"Found {len(events)} events. Exporting clips...")
     for start, end in events:
