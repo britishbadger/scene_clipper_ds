@@ -18,6 +18,25 @@ import os
 import matplotlib.ticker as ticker
 
 
+from tabulate import tabulate
+
+def print_event_summary(events):
+    """Prints a table summarizing the detected event clusters."""
+    if not events:
+        print("No significant events detected.")
+        return
+
+    table_data = []
+    for i, (start, end) in enumerate(events):
+        duration = end - start
+        table_data.append([i + 1, f"{int(start // 60):02d}:{int(start % 60):02d}", f"{int(end // 60):02d}:{int(end % 60):02d}", f"{duration:.2f} seconds"])
+
+    headers = ["#", "Start (MM:SS)", "End (MM:SS)", "Duration"]
+    print("\nDetected Event Clusters:")
+    print(tabulate(table_data, headers=headers, tablefmt="grid"))
+
+
+
 def format_time_axis(seconds, pos=None):
     """Formats seconds to MM:SS for the x-axis."""
     minutes = int(seconds // 60)
@@ -174,6 +193,9 @@ def main():
 
     # Visualize events
     visualize_events(args.input, events, args.output_dir)
+
+    # Print event summary table
+    print_event_summary(events)
 
     video_duration = get_video_duration(args.input)
     if video_duration is not None:
