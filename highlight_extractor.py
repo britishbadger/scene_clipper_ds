@@ -135,7 +135,7 @@ def analyze_audio(audio):
     samples = librosa.resample(samples.astype(float), orig_sr=audio.frame_rate, target_sr=16000)
     scores, embeddings, spectrogram = model(samples)
     scores = scores.numpy()
-    target_classes = ['Cheering', 'Clapping', 'Music', 'Applause', 'Siren', 'Buzzer','Foghorn', 'Whistle']
+    target_classes = ['Cheering', 'Clapping','Crowd', 'Yell','Children shouting', 'Chatter','Music', 'Applause', 'Siren','Shout','Buzzer','Foghorn', 'Whistle']
     valid_classes = [cls for cls in target_classes if cls in class_names]
     class_indices = [class_names.index(c) for c in valid_classes]
     print(f"Monitoring for sound classes: {[class_names[i] for i in class_indices]}")
@@ -153,7 +153,7 @@ def analyze_audio(audio):
     return event_times, scores, detected_classes_per_frame
 
 
-def detect_events(event_times, detected_classes, min_duration=2, merge_window=3):
+def detect_events(event_times, detected_classes, min_duration=3, merge_window=3.5):
     """Cluster events, filter short/noisy detections, and track classes."""
     events = []
     current_start = None
@@ -218,6 +218,35 @@ def print_all_detections(event_times, scores, class_names):
     headers = ["Time (MM:SS)", "Detected Class", "Score"]
     print(tabulate(table_data, headers=headers, tablefmt="grid"))
 
+
+def format_time_filename(seconds):
+    """Converts seconds to 'MMmSSs' format for filenames."""
+    minutes = int(seconds // 60)
+    secs = int(seconds % 60)
+    return f"{minutes}m{secs}s"
+
+def export_clip(video_path, output_dir, start, end, video_duration):
+    """Export video clip with duration limits."""
+    os.makedirs(output_dir, exist_ok=True)
+    start = max(0, start)  # Ensure start is not negative
+    end = min(video_duration, end)  # Ensure end does not exceed video duration
+
+    start_str = format_time_filename(start)
+    end_str = format_time_filename(end)
+    output_path = os.path.join(output_dir, f"highlight_{start_str}-{end_str}.mp4")
+    cmd = [
+        "ffmpeg", "-y",
+        "-ss", str(start),
+        "-to", str(end),
+        "-i", video_path,
+        "-c", "copy",
+        output_path
+    ]
+    if end > start:  # Only export if the end time is after the start time
+        subprocess.run(cmd, check=True)
+    else:
+        print(f"Skipping export: end time ({end_str}) is not after start time ({start_str}).")
+
 def main():
     parser = argparse.ArgumentParser(description="Hockey Highlight Extractor")
     parser.add_argument("--input", required=True, help="Input video file")
@@ -239,13 +268,13 @@ def main():
     visualize_events(args.input, events, args.output_dir)
 
     # Print all individual detections
-    print_all_detections(event_times, scores, analyze_audio.class_names) # Access class_names
-
+    #print_all_detections(event_times, scores, analyze_audio.class_names) # Access class_names
 
     # Print event summary table with classes
     print_event_summary(events_with_classes)
 
     video_duration = get_video_duration(args.input)
+
     if video_duration is not None:
         if not args.visualize_only:
             print(f"Found {len(events_with_classes)} events. Exporting clips (max duration: {format_time_axis(video_duration)})...")
